@@ -1,31 +1,47 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: create-github-repo
+  name: create-react-repo
   title: Create a GitHub Repository
   description: Template to create a repository in GitHub
 spec:
-  owner: backstage-team
+  owner: djdurban
   type: service
 
   parameters:
     - title: Repository Info
       required:
-        - name
-        - description
+        - repoName
       properties:
-        name:
-          title: Repository Name
+        repoUrl:
+          title: Repo Url
           type: string
-        description:
-          title: Description
+          default: 'github.com/djdurban?owner=djdurban&repo='
+        repoName:
+          title: Repo Name
           type: string
 
   steps:
-    - id: create-repository
-      name: Create GitHub Repository
-      action: github:repo:create
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
       input:
-        owner: ${{ parameters.owner }}
-        name: ${{ parameters.name }}
-        description: ${{ parameters.description }}
+        url: 'https://github.com/djdurban/back-to-ic-templates/tree/main/templates/react-template/content'
+        values:
+          name: ${{ parameters.repoName }}
+
+    - id: create-repository
+      name: Create Repository
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        description: This is ${{ parameters.repoName }}
+        repoUrl: '${{ parameters.repoUrl }}${{ parameters.repoName }}'
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['create-repository'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
